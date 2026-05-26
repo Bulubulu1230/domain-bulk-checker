@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domain Availability Bulk Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e4e4e4;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .input-section {
+            background: #252a3d;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #b8b8b8;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            background: #1a1f2e;
+            border: 2px solid #3a3f52;
+            border-radius: 8px;
+            color: #e4e4e4;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea::placeholder {
+            color: #6a6a6a;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #3a3f52;
+            color: #e4e4e4;
+        }
+
+        .btn-secondary:hover {
+            background: #4a4f62;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #252a3d;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .stat-available .stat-value {
+            color: #4ade80;
+        }
+
+        .stat-taken .stat-value {
+            color: #f87171;
+        }
+
+        .stat-checking .stat-value {
+            color: #fbbf24;
+        }
+
+        .results-section {
+            background: #252a3d;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .results-header h2 {
+            color: #e4e4e4;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            background: #3a3f52;
+            color: #e4e4e4;
+            border: 2px solid transparent;
+        }
+
+        .filter-btn.active {
+            border-color: #667eea;
+            background: #667eea22;
+        }
+
+        .results-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .domain-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #1a1f2e;
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .domain-item:hover {
+            background: #222736;
+        }
+
+        .domain-item.available {
+            border-left-color: #4ade80;
+        }
+
+        .domain-item.taken {
+            border-left-color: #f87171;
+        }
+
+        .domain-item.checking {
+            border-left-color: #fbbf24;
+        }
+
+        .domain-item.error {
+            border-left-color: #fb923c;
+        }
+
+        .domain-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .domain-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .status-available {
+            background: #4ade8033;
+            color: #4ade80;
+        }
+
+        .status-taken {
+            background: #f8717133;
+            color: #f87171;
+        }
+
+        .status-checking {
+            background: #fbbf2433;
+            color: #fbbf24;
+        }
+
+        .status-error {
+            background: #fb923c33;
+            color: #fb923c;
+        }
+
+        .tld-group {
+            margin-bottom: 30px;
+        }
+
+        .tld-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3a3f52;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #fbbf24;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #1a1f2e;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            border-radius: 3px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6a6a6a;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
+            .domain-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 Domain Availability Checker</h1>
+            <p class="subtitle">Check multiple domains instantly</p>
+        </header>
+
+        <div class="input-section">
+            <label for="domainInput">Enter domains (one per line):</label>
+            <textarea 
+                id="domainInput" 
+                placeholder="example.com&#10;mysite.net&#10;coolapp.io&#10;business.co"
+            ></textarea>
+            <div class="controls">
+                <button class="btn-primary" id="checkBtn">
+                    <span>🔍</span>
+                    <span id="btnText">Check Availability</span>
+                </button>
+                <button class="btn-secondary" id="clearBtn">Clear</button>
+                <button class="btn-secondary" id="exportBtn" style="display: none;">Export Results</button>
+            </div>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card stat-available">
+                <div class="stat-value" id="availableCount">0</div>
+                <div class="stat-label">Available</div>
+            </div>
+            <div class="stat-card stat-taken">
+                <div class="stat-value" id="takenCount">0</div>
+                <div class="stat-label">Taken</div>
+            </div>
+            <div class="stat-card stat-checking">
+                <div class="stat-value" id="checkingCount">0</div>
+                <div class="stat-label">Checking</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <div class="results-header">
+                <h2>Results</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="available">Available</button>
+                    <button class="filter-btn" data-filter="taken">Taken</button>
+                </div>
+            </div>
+            <div class="results-list" id="resultsList"></div>
+        </div>
+    </div>
+
+    <script>
+        const domainInput = document.getElementById('domainInput');
+        const checkBtn = document.getElementById('checkBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const btnText = document.getElementById('btnText');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const stats = document.getElementById('stats');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsList = document.getElementById('resultsList');
+        
+        let results = [];
+        let currentFilter = 'all';
+        let isChecking = false;
+
+        // DNS-based availability check
+        async function checkDomainAvailability(domain) {
+            try {
+                // Clean domain name
+                domain = domain.trim().toLowerCase();
+                if (!domain || !domain.includes('.')) {
+                    return { domain, status: 'error', message: 'Invalid domain format' };
+                }
+
+                // Try DNS lookup via public DNS-over-HTTPS (Cloudflare)
+                const dnsUrl = `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`;
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(dnsUrl, {
+                    headers: { 'Accept': 'application/dns-json' },
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error('DNS query failed');
+                }
+                
+                const data = await response.json();
+                
+                // If we get answers, domain is registered
+                if (data.Answer && data.Answer.length > 0) {
+                    return { domain, status: 'taken', message: 'Domain is registered' };
+                }
+                
+                // If Status is NXDOMAIN (3), domain doesn't exist
+                if (data.Status === 3) {
+                    return { domain, status: 'available', message: 'Domain appears available' };
+                }
+                
+                // If Status is NOERROR (0) but no answers, might be registered but no A record
+                if (data.Status === 0) {
+                    return { domain, status: 'taken', message: 'Domain is registered' };
+                }
+                
+                return { domain, status: 'error', message: 'Unable to determine status' };
+                
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return { domain, status: 'error', message: 'Timeout' };
+                }
+                return { domain, status: 'error', message: error.message };
+            }
+        }
+
+        function getTLD(domain) {
+            const parts = domain.split('.');
+            return parts.length > 1 ? parts[parts.length - 1] : 'unknown';
+        }
+
+        function updateStats() {
+            const available = results.filter(r => r.status === 'available').length;
+            const taken = results.filter(r => r.status === 'taken').length;
+            const checking = results.filter(r => r.status === 'checking').length;
+            
+            document.getElementById('availableCount').textContent = available;
+            document.getElementById('takenCount').textContent = taken;
+            document.getElementById('checkingCount').textContent = checking;
+            document.getElementById('totalCount').textContent = results.length;
+        }
+
+        function renderResults() {
+            const filtered = currentFilter === 'all' 
+                ? results 
+                : results.filter(r => r.status === currentFilter);
+
+            // Group by TLD
+            const grouped = {};
+            filtered.forEach(result => {
+                const tld = getTLD(result.domain);
+                if (!grouped[tld]) grouped[tld] = [];
+                grouped[tld].push(result);
+            });
+
+            // Sort TLDs
+            const sortedTLDs = Object.keys(grouped).sort();
+
+            resultsList.innerHTML = '';
+
+            if (filtered.length === 0) {
+                resultsList.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p>No results to display</p>
+                    </div>
+                `;
+                return;
+            }
+
+            sortedTLDs.forEach(tld => {
+                const group = document.createElement('div');
+                group.className = 'tld-group';
+                
+                const header = document.createElement('div');
+                header.className = 'tld-header';
+                header.textContent = `.${tld} (${grouped[tld].length})`;
+                group.appendChild(header);
+
+                grouped[tld].forEach(result => {
+                    const item = document.createElement('div');
+                    item.className = `domain-item ${result.status}`;
+                    
+                    let statusHTML = '';
+                    if (result.status === 'checking') {
+                        statusHTML = `<span class="status-badge status-checking"><span class="spinner"></span> Checking</span>`;
+                    } else if (result.status === 'available') {
+                        statusHTML = `<span class="status-badge status-available">✓ Available</span>`;
+                    } else if (result.status === 'taken') {
+                        statusHTML = `<span class="status-badge status-taken">✗ Taken</span>`;
+                    } else {
+                        statusHTML = `<span class="status-badge status-error">⚠ Error</span>`;
+                    }
+
+                    item.innerHTML = `
+                        <div class="domain-name">${result.domain}</div>
+                        <div class="domain-status">${statusHTML}</div>
+                    `;
+                    
+                    group.appendChild(item);
+                });
+
+                resultsList.appendChild(group);
+            });
+        }
+
+        async function checkDomains() {
+            if (isChecking) return;
+
+            const domains = domainInput.value
+                .split('\n')
+                .map(d => d.trim())
+                .filter(d => d.length > 0);
+
+            if (domains.length === 0) {
+                alert('Please enter at least one domain');
+                return;
+            }
+
+            isChecking = true;
+            checkBtn.disabled = true;
+            btnText.textContent = 'Checking...';
+            progressBar.style.display = 'block';
+            stats.style.display = 'grid';
+            resultsSection.style.display = 'block';
+            exportBtn.style.display = 'inline-flex';
+
+            // Initialize results
+            results = domains.map(domain => ({
+                domain,
+                status: 'checking',
+                message: ''
+            }));
+
+            updateStats();
+            renderResults();
+
+            // Check domains with concurrency limit
+            const concurrency = 5;
+            let completed = 0;
+
+            for (let i = 0; i < domains.length; i += concurrency) {
+                const batch = domains.slice(i, i + concurrency);
+                const promises = batch.map(async (domain, idx) => {
+                    const result = await checkDomainAvailability(domain);
+                    const globalIdx = i + idx;
+                    results[globalIdx] = result;
+                    completed++;
+                    
+                    const progress = (completed / domains.length) * 100;
+                    progressFill.style.width = `${progress}%`;
+                    
+                    updateStats();
+                    renderResults();
+                });
+
+                await Promise.all(promises);
+            }
+
+            isChecking = false;
+            checkBtn.disabled = false;
+            btnText.textContent = 'Check Availability';
+            progressBar.style.display = 'none';
+        }
+
+        function clearAll() {
+            domainInput.value = '';
+            results = [];
+            stats.style.display = 'none';
+            resultsSection.style.display = 'none';
+            exportBtn.style.display = 'none';
+            progressBar.style.display = 'none';
+        }
+
+        function exportResults() {
+            if (results.length === 0) return;
+
+            const csv = ['Domain,Status,Message']
+                .concat(results.map(r => `${r.domain},${r.status},${r.message || ''}`))
+                .join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `domain-check-${Date.now()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        checkBtn.addEventListener('click', checkDomains);
+        clearBtn.addEventListener('click', clearAll);
+        exportBtn.addEventListener('click', exportResults);
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderResults();
+            });
+        });
+
+        // Allow Enter to submit
+        domainInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                checkDomains();
+            }
+        });
+    </script>
+</body>
+</html>
